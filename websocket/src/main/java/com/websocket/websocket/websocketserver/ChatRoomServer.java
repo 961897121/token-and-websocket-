@@ -1,6 +1,7 @@
 package com.websocket.websocket.websocketserver;
 
 import com.alibaba.fastjson.JSONObject;
+import com.websocket.websocket.pojo.Info;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.OnClose;
@@ -19,8 +20,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @ServerEndpoint("/websocket")
 public class ChatRoomServer {
     private Session session;                        //当前websocket的session
-    private Map<String, Object> userInfo;           //当前session的用户信息
-    private static Map<String, Object> serverInfo;  //服务器信息
+    private Info userInfo;           //当前session的用户信息
+    private static Info serverInfo = new Info();  //服务器信息
 
     private static CopyOnWriteArraySet<ChatRoomServer> webSocketSet = new CopyOnWriteArraySet<ChatRoomServer>();
 
@@ -32,34 +33,32 @@ public class ChatRoomServer {
     public void onOpen(Session session){
         this.session = session;
         webSocketSet.add(this);
+        userInfo = new Info();
+        userInfo.setUserType("user");
 
         String str = session.getQueryString();  //取请求参数 url?key=value&key2=value2
         System.out.println(str);
         String[] params = str.split("&");
 
-        userInfo = new HashMap<>();
-
         for (int i = 0; i < params.length; i++) {
             System.out.println(params[i]);
             String key = params[i].split("=")[0];
             String value = params[i].split("=")[1];
-            userInfo.put(key, value);
+            userInfo.setUserName(value);
         }
 
         System.out.println("open，当前在线人数"+webSocketSet.size());
 
-        if(serverInfo == null){                     //初始化服务器参数
-            serverInfo = new HashMap<>();
-            serverInfo.put("username", "服务器");
-        }
+//        if(serverInfo == null){                     //初始化服务器参数
+//            serverInfo = new HashMap<>();
+//            serverInfo.put("username", "服务器");
+//        }
 
-        serverInfo.put("member", webSocketSet.size());
-
-//        addDate();
+        serverInfo.setMember(webSocketSet.size());
 
         try {
             sendObject(serverInfo, "欢迎光临！！");                             //欢迎上线用户
-            groupTextMessaging(userInfo.get("username")+"上线了", false);   //服务器向其他用户发送上线提醒
+            groupTextMessaging(userInfo.getUserName()+"上线了", false);   //服务器向其他用户发送上线提醒
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -123,10 +122,10 @@ public class ChatRoomServer {
         this.session = null;
 
         System.out.println("一人断开连接，当前在线人数"+webSocketSet.size());
-        serverInfo.put("member", webSocketSet.size());
+        serverInfo.setMember(webSocketSet.size());
 
         try {
-            groupTextMessaging(userInfo.get("username")+"下线了", false);//服务器向其他用户发送下线提醒
+            groupTextMessaging(userInfo.getUserName()+"下线了", false);//服务器向其他用户发送下线提醒
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -173,7 +172,7 @@ public class ChatRoomServer {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String date = simpleDateFormat.format(new Date());
 
-        userInfo.put("date", date);
-        serverInfo.put("date", date);
+        userInfo.setDate(date);
+        serverInfo.setDate(date);
     }
 }
