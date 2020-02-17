@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>聊天室</title>
+</head>
+<body>
+<div id="chatroom">
+    <div>
+        用户名：<input type="text" id="username" placeholder="输入用户名开聊"/>
+        <button id="link" @click="link()" v-show="!isConnected">连接</button>
+        <button style="background-color: red;" id="unlink" @click="unlink()" v-show="isConnected">断开</button>
+    </div>
+    <div v-show="isConnected">
+        发送的消息<input type="text" id="input"/>
+        <button @click="send()">发送</button>
+        在线人数:{{member}}
+    </div>
+    <div id="frame"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script>
+    let vue = new Vue({
+        el: "#chatroom",
+        data: {
+            target: "ws://localhost:8080/websocket",
+            msg: "没有连接服务器",
+            isConnected: false,
+            member: 0
+        },
+        methods:{
+            link: function () {
+                let _this = this;
+
+                frame = document.getElementById('frame');
+                let username = document.getElementById('username').value;
+                if(username === ""){
+                    window.alert("请输入用户名");
+                    return;
+                }
+
+                ws = new WebSocket(this.target+"?username="+username);
+                this.isConnected = true;
+
+                frame.innerHTML = "连接成功";
+
+                ws.onmessage = function(e){
+                    window.console.log(e);
+
+                    var response = JSON.parse(e.data);
+                    var msgDiv = document.createElement('div');
+
+                    msgDiv.innerHTML = "<span "+ ((response.userType === "server") ? "style='color: #42b983'":"") +">"+response.userName+"("+ response.date +"):</span><br>"+response.responseMsg;
+                    frame.appendChild(msgDiv);
+
+                    if(response.member != undefined){
+                        _this.member = response.member;
+                    }
+
+                }
+            },
+            unlink(){
+                frame = document.getElementById('frame');
+                ws.close();
+                this.isConnected = false;
+                frame.innerHTML = "没有连接服务器";
+            },
+            send(){
+                var input = document.getElementById('input');
+                if(input.value === ""){
+                    window.alert("发送内容不能为空");
+                }else {
+                    ws.send(input.value);
+                }
+
+                input.value = "";
+            }
+        }
+    })
+</script>
+<style>
+    #frame {
+        max-width: 100%;
+        min-height: 100px;
+        border: solid 1px black;
+        margin: 0 auto;
+        padding: 0px;
+    }
+
+    #frame span {
+        color: blue;
+    }
+
+    button {
+        border-radius: 5px;
+        width: 50px;
+        height: 30px;
+        background-color: skyblue;
+    }
+</style>
+</body>
+</html>
