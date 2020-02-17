@@ -10,6 +10,8 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -42,7 +44,12 @@ public class ChatRoomServer {
             System.out.println(params[i]);
             String key = params[i].split("=")[0];
             String value = params[i].split("=")[1];
-            userInfo.setUserName(value);
+            try {
+                //解决中文名字乱码问题
+                userInfo.setUserName(URLDecoder.decode(value, "utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
 
         System.out.println("open，当前在线人数"+webSocketSet.size());
@@ -53,6 +60,7 @@ public class ChatRoomServer {
 //        }
 
         serverInfo.setMember(webSocketSet.size());
+        userInfo.setMember(webSocketSet.size());
 
         try {
             sendObject(serverInfo, "欢迎光临！！");                             //欢迎上线用户
@@ -121,6 +129,7 @@ public class ChatRoomServer {
 
         System.out.println("一人断开连接，当前在线人数"+webSocketSet.size());
         serverInfo.setMember(webSocketSet.size());
+        userInfo.setMember(webSocketSet.size());
 
         try {
             groupTextMessaging(userInfo.getUserName()+"下线了", false);//服务器向其他用户发送下线提醒

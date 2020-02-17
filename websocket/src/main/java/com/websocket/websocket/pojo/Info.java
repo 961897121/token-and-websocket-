@@ -52,4 +52,14 @@ public class Info {
         JSONObject object = (JSONObject) JSONObject.toJSON(new Info());
         System.out.println(object);
     }
+
+    @Override
+    public String toString() {
+        return "Info{" +
+                "member=" + member +
+                ", userName='" + userName + '\'' +
+                ", userType='" + userType + '\'' +
+                ", date='" + date + '\'' +
+                '}';
+    }
 }
